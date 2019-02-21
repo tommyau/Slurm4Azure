@@ -35,7 +35,7 @@ NUM_OF_DATA_DISKS=${10}
 TEMPLATE_BASE=${11}
 
 # Get latest packages
-sudo apt-get update
+sudo apt-get update >> /tmp/azuredeploy.log.$$ 2>&1
 
 # Create a cluster wide NFS share directory. Format and mount the data disk on master and install NFS
 sudo sh -c "mkdir /data" >> /tmp/azuredeploy.log.$$ 2>&1

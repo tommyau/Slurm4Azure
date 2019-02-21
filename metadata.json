@@ -1,7 +1,7 @@
 {
   "itemDisplayName": "Slurm4Azure",
   "description": "Creates a SLURM cluster with a master vm and a configurable number of workers.",
-  "githubUsername": "tamhinsf",
+  "githubUsername": "tommyau",
   "summary": "Slurm4Azure",
-  "dateUpdated": "2018-02-16"
+  "dateUpdated": "2019-02-21"
 }
