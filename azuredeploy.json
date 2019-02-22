@@ -76,6 +76,13 @@
         "description": "Number of worker nodes to create."
       }
     },
+    "imageversion": {
+      "type": "string",
+      "defaultValue": "latest",
+      "metadata": {
+        "description": "Azure VM image version. Use 16.04.201901221 for NCv3 series with multiple GPUs"
+      }
+    },
     "_artifactsLocation": {
       "type": "string",
       "metadata": {
@@ -206,7 +213,7 @@
             "publisher": "[variables('imagePublisher')]",
             "offer": "[variables('imageOffer')]",
             "sku": "[variables('ubuntuOSVersion')]",
-            "version": "latest"
+            "version": "[parameters('imageversion')]"
           },
           "copy": [
             {
@@ -311,7 +318,7 @@
             "publisher": "[variables('imagePublisher')]",
             "offer": "[variables('imageOffer')]",
             "sku": "[variables('ubuntuOSVersion')]",
-            "version": "latest"
+            "version": "[parameters('imageversion')]"
           },
           "osDisk": {
             "createOption": "FromImage"

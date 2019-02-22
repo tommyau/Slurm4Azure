@@ -107,7 +107,7 @@ do
    echo 'I update host - '$WORKER_NAME$i
    echo $WORKER_IP_BASE$workerip $WORKER_NAME$i >> /etc/hosts
    echo $WORKER_IP_BASE$workerip $WORKER_NAME$i >> /data/tmp/hosts
-   sudo -u $ADMIN_USERNAME sh -c "sshpass -p '$ADMIN_PASSWORD' ssh-copy-id $WORKER_NAME$i"
+   nc -w 300 -z $WORKER_NAME$i 22 && sudo -u $ADMIN_USERNAME sh -c "sshpass -p '$ADMIN_PASSWORD' ssh-copy-id $WORKER_NAME$i"
    i=`expr $i + 1`
 done
 
@@ -117,7 +117,7 @@ done
 # Install the package
 sudo apt-get update
 sudo chmod g-w /var/log # Must do this before munge will generate key
-sudo apt-get install slurm-llnl -y
+sudo apt-get install slurm-llnl parallel -y
 
 # Make a slurm spool directory
 sudo mkdir /var/spool/slurm
@@ -169,6 +169,28 @@ ls -la $mungekey
 # Create and deploy assets to worker nodes
 echo "Start looping all workers" 
 
+sudo cat > /data/tmp/workerinit.sh << 'ENDSSH1'
+   sudo /tmp/workerNfs.sh
+   sudo rm -f /tmp/workerNfs.sh
+   sudo echo "source /data/shared-bashrc" | sudo -u $USER tee -a /home/$USER/.bashrc
+   sudo sh -c "cat /data/tmp/hosts >> /etc/hosts"
+   sudo chmod g-w /var/log
+   sudo mkdir /var/spool/slurm
+   sudo chown slurm /var/spool/slurm
+   sudo apt-get update
+   sudo apt-get install slurm-llnl -y
+   sudo cp -f /tmp/munge.key /etc/munge/munge.key
+   sudo chown munge /etc/munge/munge.key
+   sudo chgrp munge /etc/munge/munge.key
+   sudo rm -f /tmp/munge.key
+   sudo /usr/sbin/munged --force # ignore egregrious security warning
+   sudo cp -f /data/tmp/slurm.conf /etc/slurm-llnl/slurm.conf
+   sudo chown slurm /etc/slurm-llnl/slurm.conf
+   sudo slurmd
+ENDSSH1
+sudo chmod u+x /data/tmp/workerinit.sh
+
+
 i=0
 while [ $i -lt $NUM_OF_VM ]
 do
@@ -180,32 +202,18 @@ do
    # small hack: munge.key has permission problems when copying from NFS drive.  Fix this later
    sudo -u $ADMIN_USERNAME scp $mungekey $ADMIN_USERNAME@$worker:/tmp/munge.key
    
-   echo "Remote execute on $worker" 
-   sudo -u $ADMIN_USERNAME ssh $ADMIN_USERNAME@$worker << 'ENDSSH1'
-      sudo /tmp/workerNfs.sh
-      sudo rm -f /tmp/workerNfs.sh
-      sudo echo "source /data/shared-bashrc" | sudo -u $USER tee -a /home/$USER/.bashrc
-      sudo sh -c "cat /data/tmp/hosts >> /etc/hosts"
-      sudo chmod g-w /var/log
-      sudo mkdir /var/spool/slurm
-      sudo chown slurm /var/spool/slurm
-      sudo apt-get update
-      sudo apt-get install slurm-llnl -y
-      sudo cp -f /tmp/munge.key /etc/munge/munge.key
-      sudo chown munge /etc/munge/munge.key
-      sudo chgrp munge /etc/munge/munge.key
-      sudo rm -f /tmp/munge.key
-      sudo /usr/sbin/munged --force # ignore egregrious security warning
-      sudo cp -f /data/tmp/slurm.conf /etc/slurm-llnl/slurm.conf
-      sudo chown slurm /etc/slurm-llnl/slurm.conf
-      sudo slurmd
-ENDSSH1
+   sudo -u $ADMIN_USERNAME scp /data/tmp/workerinit.sh $ADMIN_USERNAME@$worker:/tmp/workerinit.sh
+   
    i=`expr $i + 1`
 done
 
+echo "Remote execute on $worker" 
+parallel --tag "sudo -u $ADMIN_USERNAME ssh $ADMIN_USERNAME@$worker /tmp/workerinit.sh" ::: $(cat /etc/hosts | grep $WORKER_NAME | cut -f2 -d" ")
+
+
 # Remove temp files on master
 #rm -f $mungekey
-sudo rm -f /data/tmp/*
+#sudo rm -f /data/tmp/*
 
 # Write a file called done in the $ADMIN_USERNAME home directory to let the user know we're all done
 sudo -u $ADMIN_USERNAME touch /home/$ADMIN_USERNAME/done
