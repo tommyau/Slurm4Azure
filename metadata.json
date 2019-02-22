@@ -3,5 +3,5 @@
   "description": "Creates a SLURM cluster with a master vm and a configurable number of workers.",
   "githubUsername": "tommyau",
   "summary": "Slurm4Azure",
-  "dateUpdated": "2019-02-21"
+  "dateUpdated": "2019-02-22"
 }
