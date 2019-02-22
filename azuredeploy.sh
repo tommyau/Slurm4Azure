@@ -114,7 +114,7 @@ do
 	echo 'to wait 60 sec'
 	sleep 60
 	TRIAL=`expr $TRIAL + 1`
-	if [ $TRIAL -eq 5 ]; then
+	if [ $TRIAL -eq 60 ]; then
 	    echo 'give up'
 	    break
 	fi
