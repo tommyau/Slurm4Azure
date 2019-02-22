@@ -207,8 +207,8 @@ do
    i=`expr $i + 1`
 done
 
-echo "Remote execute on $worker" 
-parallel --tag "sudo -u $ADMIN_USERNAME ssh $ADMIN_USERNAME@$worker /tmp/workerinit.sh" ::: $(cat /etc/hosts | grep $WORKER_NAME | cut -f2 -d" ")
+echo "Remote execute on worker" 
+parallel --tag "sudo -u $ADMIN_USERNAME ssh $ADMIN_USERNAME@{} /tmp/workerinit.sh" ::: $(cat /etc/hosts | grep $WORKER_NAME | cut -f2 -d" ")
 
 
 # Remove temp files on master
