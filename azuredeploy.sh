@@ -107,7 +107,19 @@ do
    echo 'I update host - '$WORKER_NAME$i
    echo $WORKER_IP_BASE$workerip $WORKER_NAME$i >> /etc/hosts
    echo $WORKER_IP_BASE$workerip $WORKER_NAME$i >> /data/tmp/hosts
-   nc -w 300 -z $WORKER_NAME$i 22 && sudo -u $ADMIN_USERNAME sh -c "sshpass -p '$ADMIN_PASSWORD' ssh-copy-id $WORKER_NAME$i"
+   TRIAL=0
+   echo 'checking if the ssh is up'
+    until nc -w 5 -z $WORKER_NAME$i 22;
+    do
+	echo 'to wait 60 sec'
+	sleep 60
+	TRIAL=`expr $TRIAL + 1`
+	if [ $TRIAL -eq 5 ]; then
+	    echo 'give up'
+	    break
+	fi
+    done
+   sudo -u $ADMIN_USERNAME sh -c "sshpass -p '$ADMIN_PASSWORD' ssh-copy-id $WORKER_NAME$i"
    i=`expr $i + 1`
 done
 
