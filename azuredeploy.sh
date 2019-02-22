@@ -183,7 +183,6 @@ echo "Start looping all workers"
 
 sudo cat > /data/tmp/workerinit.sh << 'ENDSSH1'
    sudo /tmp/workerNfs.sh
-   sudo rm -f /tmp/workerNfs.sh
    sudo echo "source /data/shared-bashrc" | sudo -u $USER tee -a /home/$USER/.bashrc
    sudo sh -c "cat /data/tmp/hosts >> /etc/hosts"
    sudo chmod g-w /var/log
@@ -194,7 +193,6 @@ sudo cat > /data/tmp/workerinit.sh << 'ENDSSH1'
    sudo cp -f /tmp/munge.key /etc/munge/munge.key
    sudo chown munge /etc/munge/munge.key
    sudo chgrp munge /etc/munge/munge.key
-   sudo rm -f /tmp/munge.key
    sudo /usr/sbin/munged --force # ignore egregrious security warning
    sudo cp -f /data/tmp/slurm.conf /etc/slurm-llnl/slurm.conf
    sudo chown slurm /etc/slurm-llnl/slurm.conf
@@ -220,7 +218,7 @@ do
 done
 
 echo "Remote execute on worker" 
-parallel --tag "sudo -u $ADMIN_USERNAME ssh $ADMIN_USERNAME@{} /tmp/workerinit.sh" ::: $(cat /etc/hosts | grep $WORKER_NAME | cut -f2 -d" ")
+parallel -j 0 --delay 0.25 --tag "sudo -u $ADMIN_USERNAME ssh $ADMIN_USERNAME@{} /tmp/workerinit.sh" ::: $(cat /etc/hosts | grep $WORKER_NAME | cut -f2 -d" ")
 
 
 # Remove temp files on master
@@ -228,6 +226,7 @@ parallel --tag "sudo -u $ADMIN_USERNAME ssh $ADMIN_USERNAME@{} /tmp/workerinit.s
 #sudo rm -f /data/tmp/*
 
 # Write a file called done in the $ADMIN_USERNAME home directory to let the user know we're all done
+echo "azuredeploy.sh done"
 sudo -u $ADMIN_USERNAME touch /home/$ADMIN_USERNAME/done
 } 2>&1 | tee $LOG
 exit 0
